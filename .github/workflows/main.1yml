@@ -1,0 +1,41 @@
+name: Build Bentley Playz Door Fix
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get source code
+        uses: actions/checkout@v4
+
+      - name: Set up Stardew Valley build environment
+        uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
+
+      - name: Build mod
+        shell: bash
+        run: |
+          project="$(find . -name 'BentleyPlayz.FastFoodUsefulStuff.Smapi.csproj' -print -quit)"
+          if [ -z "$project" ]; then
+            echo "Could not find the Bentley project file."
+            exit 1
+          fi
+          dotnet build "$project" --configuration Release -p:ModZipPath="$PWD/_releases"
+
+      - name: Upload the raw DLL (easy to grab on a phone)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BentleyPlayz-Smapi-DLL
+          path: |
+            **/bin/Release/**/BentleyPlayz.FastFoodUsefulStuff.Smapi.dll
+            **/bin/Release/**/BentleyPlayz.FastFoodUsefulStuff.Smapi.pdb
+
+      - name: Upload finished ZIP
+        uses: Pathoschild/SMAPI-ModBuildWorkflow/upload-release-artifacts@v1
+        with:
+          create_attestations: false
